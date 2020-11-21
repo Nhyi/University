@@ -13,7 +13,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer # the heavy lifting o
 import urllib # some url parsing support
 import base64 # some encoding support
 import sqlite3 # used to create the database
-import binascii, os, hashlib #used to help has the passwords and check them in the login tables
+import hashlib #used to help has the passwords and check them in the login tables
 
 #Task 1: Creating the SQL Database
 #creating the database and referencing to it
@@ -59,22 +59,13 @@ passwords = ['password1', 'password2', 'password3', 'password4', 'password5', 'p
 
 #hashing function
 def hash_pwd(password):
-    #creating a salt
-    salt = hashlib.sha256(os.urandom(60)).hexdigest().encode('ascii')
-    
-    #hashing the password
-    pwdhash = hashlib.pbkdf2_hmac('sha512', password.encode('utf-8'), salt, 100000)
-    pwdhash = binascii.hexlify(pwdhash)
-    
-    return (salt + pwdhash).decode('ascii')
+    #hash the password
+    hashing_password = hashlib.sha512(password.encode('utf-8'))
+    return hashing_password.hexdigest()
  
 #checking function
 def verify_password(stored_password, provided_password):
-    salt = stored_password[:64]
-    stored_password = stored_password[64:]
-    pwdhash = hashlib.pbkdf2_hmac('sha512', provided_password.encode('utf-8'), salt.encode('ascii'), 100000)
-    pwdhash = binascii.hexlify(pwdhash).decode('ascii')
-    return pwdhash == stored_password
+    return stored_password == hash_pwd(provided_password)
 
 #hashes the usernames and passwords
 hashed_pwds = [hash_pwd(pwd) for pwd in passwords]
@@ -129,7 +120,14 @@ def handle_login_request(iuser, imagic, parameters):
         handle_delete_session(iuser, imagic)
 
     text = "<response>\n"
-    if parameters['usernameinput'][0] == 'test': ## The user is valid
+
+    username = parameters['usernameinput'][0]
+    given_password = parameters['passwordinput'][0]
+
+    cursor.execute('''SELECT passwords FROM logins WHERE usernames = ?;''', (username,))
+    db_password = (cursor.fetchone()[0])
+
+    if verify_password(db_password, given_password):
         text += build_response_redirect('/page.html')
         user = 'test'
         magic = '1234567890'
