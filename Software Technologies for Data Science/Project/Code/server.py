@@ -17,12 +17,12 @@ import binascii, os, hashlib #used to help has the passwords and check them in t
 
 #Task 1: Creating the SQL Database
 #creating the database and referencing to it
-db = sqlite3.connect(':memory:')
+db = sqlite3.connect('initial_database.db')
 cursor = db.cursor()
 
 #creating the table for storing logins and password
 cursor.execute('''CREATE TABLE logins (
-    username TEXT PRIMARY KEY,
+    usernames TEXT PRIMARY KEY,
     passwords TEXT NOT NULL
     )''')
 
@@ -49,11 +49,35 @@ cursor.execute('''CREATE TABLE traffic (
 db.commit()
 
 #storing the usernames and passwords in the logins table
-
 usernames = ['test1', 'test2', 'test3', 'test4', 'test5', 'test6', 'test7', 'test8', 'test9', 'test10']
 passwords = ['password1', 'password2', 'password3', 'password4', 'password5', 'password6', 'password7', 'password8', 'password9', 'password10']
 
-def hash_pw(password):
+#hashing function
+def hash_pwd(password):
+    #creating a salt
+    salt = hashlib.sha256(os.urandom(60)).hexdigest().encode('ascii')
+    
+    #hashing the password
+    pwdhash = hashlib.pbkdf2_hmac('sha512', password.encode('utf-8'), salt, 100000)
+    pwdhash = binascii.hexlify(pwdhash)
+    
+    return (salt + pwdhash).decode('ascii')
+ 
+#checking function
+def verify_password(stored_password, provided_password):
+    salt = stored_password[:64]
+    stored_password = stored_password[64:]
+    pwdhash = hashlib.pbkdf2_hmac('sha512', provided_password.encode('utf-8'), salt.encode('ascii'), 100000)
+    pwdhash = binascii.hexlify(pwdhash).decode('ascii')
+    return pwdhash == stored_password
+
+#hashes the usernames and passwords
+hashed_pwds = [hash_pwd(pwd) for pwd in passwords]
+user_hash = list(zip(usernames, hashed_pwds))
+
+#populates the table of logins
+cursor.executemany("""INSERT INTO logins VALUES (?, ?)""", user_hash)
+db.commit()
 
 # This function builds a refill action that allows part of the
 # currently loaded page to be replaced.
