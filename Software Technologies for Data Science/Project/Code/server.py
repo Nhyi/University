@@ -12,13 +12,12 @@ import http.cookies as Cookie # some cookie handling support
 from http.server import BaseHTTPRequestHandler, HTTPServer # the heavy lifting of the web server
 import urllib # some url parsing support
 import base64 # some encoding support
+import sqlite3 # used to create the database
+import binascii, os, hashlib #used to help has the passwords and check them in the login tables
 
 #Task 1: Creating the SQL Database
-#importing the modules needed to database creation
-import sqlite3
-
 #creating the database and referencing to it
-db = sqlite3.connect('initial_database.db')
+db = sqlite3.connect(':memory:')
 cursor = db.cursor()
 
 #creating the table for storing logins and password
@@ -49,6 +48,12 @@ cursor.execute('''CREATE TABLE traffic (
 #committing to the database
 db.commit()
 
+#storing the usernames and passwords in the logins table
+
+usernames = ['test1', 'test2', 'test3', 'test4', 'test5', 'test6', 'test7', 'test8', 'test9', 'test10']
+passwords = ['password1', 'password2', 'password3', 'password4', 'password5', 'password6', 'password7', 'password8', 'password9', 'password10']
+
+def hash_pw(password):
 
 # This function builds a refill action that allows part of the
 # currently loaded page to be replaced.
