@@ -20,6 +20,11 @@ import binascii, os, hashlib #used to help has the passwords and check them in t
 db = sqlite3.connect('initial_database.db')
 cursor = db.cursor()
 
+cursor.execute('''DROP TABLE IF EXISTS logins''')
+cursor.execute('''DROP TABLE IF EXISTS loginsession''')
+cursor.execute('''DROP TABLE IF EXISTS traffic''')
+db.commit()
+
 #creating the table for storing logins and password
 cursor.execute('''CREATE TABLE logins (
     usernames TEXT PRIMARY KEY,
