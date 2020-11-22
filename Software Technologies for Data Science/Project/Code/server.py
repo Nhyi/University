@@ -14,6 +14,7 @@ import urllib # some url parsing support
 import base64 # some encoding support
 import sqlite3 # used to create the database
 import hashlib #used to help has the passwords and check them in the login tables
+from datetime import datetime #using datetime for records
 
 #Task 1: Creating the SQL Database
 #creating the database and referencing to it
@@ -121,6 +122,15 @@ def handle_login_request(iuser, imagic, parameters):
 
     text = "<response>\n"
 
+    #checking for empty inputs for password or usernames
+    if 'passwordinput' not in parameters or 'usernameinput' not in parameters:
+        text += build_response_refill('message', 'Invalid password')
+        user = '!'
+        magic = ''
+        text += "</response>\n"
+        return [user, magic, text]
+
+    #checking non empty inputs against table
     username = parameters['usernameinput'][0]
     given_password = parameters['passwordinput'][0]
 
@@ -128,6 +138,8 @@ def handle_login_request(iuser, imagic, parameters):
     db_password = (cursor.fetchone()[0])
 
     if verify_password(db_password, given_password):
+        cursor.execute('''INSERT INTO loginsession (username, start_time) VALUES (?, ?)''', (username, datetime.now()))
+        db.commit()
         text += build_response_redirect('/page.html')
         user = 'test'
         magic = '1234567890'
@@ -192,6 +204,9 @@ def handle_back_request(iuser, imagic, parameters):
 ## You will need to ensure the end of the session is recorded in the database
 ## And that the session magic is revoked.
 def handle_logout_request(iuser, imagic, parameters):
+
+    cursor.execute('''UPDATE loginsession SET end_time = ? WHERE username = ?''', (datetime.now(), 'test1'))
+    db.commit()
     text = "<response>\n"
     text += build_response_redirect('/index.html')
     user = '!'
