@@ -15,6 +15,7 @@ import base64 # some encoding support
 import sqlite3 # used to create the database
 import hashlib #used to help has the passwords and check them in the login tables
 from datetime import datetime #using datetime for records
+from random import randint #used to randomize a token
 
 #Task 1: Creating the SQL Database
 #creating the database and referencing to it
@@ -38,7 +39,7 @@ cursor.execute('''CREATE TABLE loginsession (
     username TEXT,
     start_time DATETIME,
     end_time DATETIME,
-    token TEXT
+    token INTEGER
     )''')
 
 #creating the table for storing traffic
@@ -64,10 +65,6 @@ def hash_pwd(password):
     hashing_password = hashlib.sha512(password.encode('utf-8'))
     return hashing_password.hexdigest()
  
-#checking function
-def verify_password(stored_password, provided_password):
-    return stored_password == hash_pwd(provided_password)
-
 #hashes the usernames and passwords
 hashed_pwds = [hash_pwd(pwd) for pwd in passwords]
 user_hash = list(zip(usernames, hashed_pwds))
@@ -75,6 +72,16 @@ user_hash = list(zip(usernames, hashed_pwds))
 #populates the table of logins
 cursor.executemany("""INSERT INTO logins VALUES (?, ?)""", user_hash)
 db.commit()
+
+#used to create a random 10 digit token
+def random_token(n):
+    range_start = 10**(n-1)
+    range_end = (10**n)-1
+    return randint(range_start, range_end)
+
+#checking function
+def verify_password(stored_password, provided_password):
+    return stored_password == hash_pwd(provided_password)
 
 # This function builds a refill action that allows part of the
 # currently loaded page to be replaced.
