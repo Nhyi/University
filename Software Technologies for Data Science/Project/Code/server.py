@@ -15,7 +15,7 @@ import base64 # some encoding support
 import sqlite3 # used to create the database
 import hashlib #used to help has the passwords and check them in the login tables
 from datetime import datetime #using datetime for records
-from random import randint #used to randomize a token
+import secrets #used to randomize a token
 
 #Task 1: Creating the SQL Database
 #creating the database and referencing to it
@@ -39,7 +39,7 @@ cursor.execute('''CREATE TABLE loginsession (
     username TEXT,
     start_time DATETIME,
     end_time DATETIME,
-    token INTEGER
+    token TEXT
     )''')
 
 #creating the table for storing traffic
@@ -73,11 +73,9 @@ user_hash = list(zip(usernames, hashed_pwds))
 cursor.executemany("""INSERT INTO logins VALUES (?, ?)""", user_hash)
 db.commit()
 
-#used to create a random 10 digit token
-def random_token(n):
-    range_start = 10**(n-1)
-    range_end = (10**n)-1
-    return randint(range_start, range_end)
+#used to create a token
+def generate_token():
+    return secrets.token_hex()
 
 #checking function
 def verify_password(stored_password, provided_password):
@@ -94,7 +92,6 @@ def build_response_refill(where, what):
     text += "</action>\n"
     return text
 
-
 # This function builds the page redirection action
 # It indicates which page the client should fetch.
 # If this action is used, only one instance of it should
@@ -108,7 +105,11 @@ def build_response_redirect(where):
 
 ## Decide if the combination of user and magic is valid
 def handle_validate(iuser, imagic):
-    if (iuser == 'test') and (imagic == '1234567890'):
+    cursor.execute('''SELECT COUNT (*) FROM loginsession WHERE username = ? AND token = ?''', (iuser, imagic))
+    fetching = cursor.fetchall()
+    length = len(list(fetching))
+
+    if length > 0:
         return True
     else:
         return False
@@ -145,11 +146,12 @@ def handle_login_request(iuser, imagic, parameters):
     db_password = (cursor.fetchone()[0])
 
     if verify_password(db_password, given_password):
-        cursor.execute('''INSERT INTO loginsession (username, start_time) VALUES (?, ?)''', (username, datetime.now()))
+        token = generate_token()
+        cursor.execute('''INSERT INTO loginsession (username, start_time, token) VALUES (?, ?, ?)''', (username, datetime.now(), token))
         db.commit()
         text += build_response_redirect('/page.html')
-        user = 'test'
-        magic = '1234567890'
+        user = username
+        magic = token
     else: ## The user is not valid
         text += build_response_refill('message', 'Invalid password')
         user = '!'
