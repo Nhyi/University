@@ -214,7 +214,7 @@ def handle_back_request(iuser, imagic, parameters):
 ## And that the session magic is revoked.
 def handle_logout_request(iuser, imagic, parameters):
 
-    cursor.execute('''UPDATE loginsession SET end_time = ? WHERE username = ?''', (datetime.now(), 'test1'))
+    cursor.execute('''UPDATE loginsession SET end_time = ? WHERE username = ?''', (datetime.now(), iuser))
     db.commit()
     text = "<response>\n"
     text += build_response_redirect('/index.html')
