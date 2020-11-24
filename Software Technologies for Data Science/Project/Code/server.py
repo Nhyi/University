@@ -30,7 +30,7 @@ db.commit()
 #creating the table for storing logins and password
 cursor.execute('''CREATE TABLE logins (
     usernames TEXT PRIMARY KEY,
-    passwords TEXT NOT NULL
+    passwords TEXT
     )''')
 
 #creating the tables for monitoring start and end sessions
@@ -45,11 +45,13 @@ cursor.execute('''CREATE TABLE loginsession (
 #creating the table for storing traffic
 cursor.execute('''CREATE TABLE traffic (
     recordid INTEGER PRIMARY KEY,
-    username TEXT NOT NULL,
-    locations TEXT NOT NULL,
-    types TEXT NOT NULL,
-    occupancy INTEGER NOT NULL,
-    recording_times DATETIME NOT NULL
+    username TEXT,
+    locations TEXT,
+    types TEXT,
+    occupancy INTEGER,
+    recording_times DATETIME,
+    token TEXT,
+    undo INTEGER DEFAULT 0
     )''')
 
 #committing to the database
@@ -169,9 +171,20 @@ def handle_add_request(iuser, imagic, parameters):
     if handle_validate(iuser, imagic) != True:
         #Invalid sessions redirect to login
         text += build_response_redirect('/index.html')
+
+    elif 'locationinput' not in parameters:
+        text += build_response_refill('message', 'Invalid location')
+
     else: ## a valid session so process the addition of the entry.
+        locations = parameters['locationinput'][0]
+        types = parameters['typeinput'][0]
+        occupancy = parameters['occupancyinput'][0]
+        cursor.execute('''INSERT INTO traffic (username, locations, types, occupancy, recording_times, token) VALUES (?, ?, ?, ?, ?, ?)''', (iuser, locations, types, occupancy, datetime.now(), imagic))
+        db.commit()
+        cursor.execute('''SELECT COUNT (*) FROM traffic WHERE undo = 0 AND token = ?''', (imagic,))
+        record_count = cursor.fetchall()
         text += build_response_refill('message', 'Entry added.')
-        text += build_response_refill('total', '0')
+        text += build_response_refill('total', str(record_count[0][0]))
     text += "</response>\n"
     user = ''
     magic = ''
@@ -189,8 +202,12 @@ def handle_undo_request(iuser, imagic, parameters):
         #Invalid sessions redirect to login
         text += build_response_redirect('/index.html')
     else: ## a valid session so process the recording of the entry.
+        cursor.execute('''UPDATE traffic SET undo = 1 WHERE recordid = (SELECT MAX(recordid) FROM traffic WHERE undo = 0 AND token = ?)''', (imagic,))
+        db.commit()
         text += build_response_refill('message', 'Entry Un-done.')
-        text += build_response_refill('total', '0')
+        cursor.execute('''SELECT COUNT (*) FROM traffic WHERE undo = 0 AND token = ?''', (imagic,))
+        record_count = cursor.fetchall()
+        text += build_response_refill('total', str(record_count[0][0]))
     text += "</response>\n"
     user = ''
     magic = ''
