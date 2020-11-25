@@ -19,7 +19,7 @@ import secrets #used to randomize a token
 
 #Task 1: Creating the SQL Database
 #creating the database and referencing to it
-db = sqlite3.connect('initial_database.db')
+db = sqlite3.connect('database.db')
 cursor = db.cursor()
 
 cursor.execute('''DROP TABLE IF EXISTS logins''')
