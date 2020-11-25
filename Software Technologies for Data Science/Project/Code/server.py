@@ -49,7 +49,7 @@ cursor.execute('''CREATE TABLE traffic (
     locations TEXT,
     types TEXT,
     occupancy INTEGER,
-    recording_times DATETIME,
+    time_added DATETIME,
     token TEXT,
     undo INTEGER DEFAULT 0
     )''')
@@ -187,7 +187,7 @@ def handle_add_request(iuser, imagic, parameters):
         locations = parameters['locationinput'][0]
         types = parameters['typeinput'][0]
         occupancy = parameters['occupancyinput'][0]
-        cursor.execute('''INSERT INTO traffic (username, locations, types, occupancy, recording_times, token) VALUES (?, ?, ?, ?, ?, ?)''', (iuser, locations, types, occupancy, datetime.now(), imagic))
+        cursor.execute('''INSERT INTO traffic (username, locations, types, occupancy, time_added, token) VALUES (?, ?, ?, ?, ?, ?)''', (iuser, locations, types, occupancy, datetime.now(), imagic))
         db.commit()
 
         cursor.execute('''SELECT COUNT (*) FROM traffic WHERE undo = 0 AND token = ?''', (imagic,))
@@ -215,15 +215,24 @@ def handle_undo_request(iuser, imagic, parameters):
         text += build_response_redirect('/index.html')
     else: ## a valid session so process the recording of the entry.
 
-        cursor.execute('''UPDATE traffic SET undo = 1 WHERE recordid = (SELECT MAX(recordid) FROM traffic WHERE undo = 0 AND token = ?)''', (imagic,))
-        db.commit()
-
-        text += build_response_refill('message', 'Entry Un-done.')
-
-        cursor.execute('''SELECT COUNT (*) FROM traffic WHERE undo = 0 AND token = ?''', (imagic,))
+        cursor.execute('''SELECT MAX(recordid) FROM traffic WHERE undo = 0 AND token = ? AND locations = ? AND types = ? and occupancy = ?''', (imagic, parameters['locationinput'][0], parameters['typeinput'][0], parameters['occupancyinput'][0]))
         record_count = cursor.fetchall()
+        
+        if record_count[0][0] == None:
 
-        text += build_response_refill('total', str(record_count[0][0]))
+            text += build_response_refill('message', 'Record does not exist.')
+
+        else:
+        
+            cursor.execute('''UPDATE traffic SET undo = 1 WHERE recordid = (SELECT MAX(recordid) FROM traffic WHERE undo = 0 AND token = ? AND locations = ? AND types = ? and occupancy = ?)''', (imagic, parameters['locationinput'][0], parameters['typeinput'][0], parameters['occupancyinput'][0]))
+            db.commit()
+
+            text += build_response_refill('message', 'Entry Un-done.')
+
+            cursor.execute('''SELECT COUNT (*) FROM traffic WHERE undo = 0 AND token = ?''', (imagic,))
+            record_count = cursor.fetchall()
+
+            text += build_response_refill('total', str(record_count[0][0]))
 
     text += "</response>\n"
     user = ''
