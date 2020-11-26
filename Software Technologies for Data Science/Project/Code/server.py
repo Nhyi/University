@@ -58,16 +58,16 @@ cursor.execute('''CREATE TABLE traffic (
 db.commit()
 
 #storing the usernames and passwords in the logins table
-usernames = ['test1', 'test2', 'test3', 'test4', 'test5', 'test6', 'test7', 'test8', 'test9', 'test10']
-passwords = ['password1', 'password2', 'password3', 'password4', 'password5', 'password6', 'password7', 'password8', 'password9', 'password10']
+usernames = ['test1', 'test2', 'test3', 'test4', 'test5', \
+            'test6', 'test7', 'test8', 'test9', 'test10']
+passwords = ['password1', 'password2', 'password3', 'password4', 'password5', \
+            'password6', 'password7', 'password8', 'password9', 'password10']
 
 #hashing function
 def hash_pwd(password):
-    
     #hash the password
     hashing_password = hashlib.sha512(password.encode('utf-8'))
     return hashing_password.hexdigest()
- 
 #hashes the usernames and passwords
 hashed_pwds = [hash_pwd(pwd) for pwd in passwords]
 user_hash = list(zip(usernames, hashed_pwds))
@@ -112,14 +112,12 @@ def build_response_redirect(where):
 ## Decide if the combination of user and magic is valid
 def handle_validate(iuser, imagic):
 
-    cursor.execute('''SELECT COUNT (*) FROM loginsession WHERE username = ? AND token = ?''', (iuser, imagic))
+    cursor.execute('''SELECT COUNT (*) FROM loginsession WHERE \
+    username = ? AND token = ?''', (iuser, imagic))
     fetching = cursor.fetchall()
     length = len(list(fetching))
 
-    if length > 0:
-        return True
-    else:
-        return False
+    return bool(length > 0)
 
 ## remove the combination of user and magic from the data base, ending the login
 def handle_delete_session(iuser, imagic):
@@ -140,7 +138,7 @@ def handle_login_request(iuser, imagic, parameters):
 
     #checking for empty inputs for password or usernames
     if 'passwordinput' not in parameters or 'usernameinput' not in parameters:
-        text += build_response_refill('message', 'Invalid password')
+        text += build_response_refill('message', 'Invalid username/password')
         user = '!'
         magic = ''
         text += "</response>\n"
@@ -155,7 +153,8 @@ def handle_login_request(iuser, imagic, parameters):
 
     if verify_password(db_password, given_password):
         token = generate_token()
-        cursor.execute('''INSERT INTO loginsession (username, start_time, token) VALUES (?, ?, ?)''', (username, datetime.now(), token))
+        cursor.execute('''INSERT INTO loginsession (username, start_time, token) \
+        VALUES (?, ?, ?)''', (username, datetime.now(), token))
         db.commit()
         text += build_response_redirect('/page.html')
         user = username
@@ -187,7 +186,9 @@ def handle_add_request(iuser, imagic, parameters):
         locations = parameters['locationinput'][0]
         types = parameters['typeinput'][0]
         occupancy = parameters['occupancyinput'][0]
-        cursor.execute('''INSERT INTO traffic (username, locations, types, occupancy, time_added, token) VALUES (?, ?, ?, ?, ?, ?)''', (iuser, locations, types, occupancy, datetime.now(), imagic))
+        cursor.execute('''INSERT INTO traffic (username, locations, types, \
+         occupancy, time_added, token) VALUES (?, ?, ?, ?, ?, ?)''', (iuser, \
+         locations, types, occupancy, datetime.now(), imagic))
         db.commit()
 
         cursor.execute('''SELECT COUNT (*) FROM traffic WHERE undo = 0 AND token = ?''', (imagic,))
@@ -215,23 +216,26 @@ def handle_undo_request(iuser, imagic, parameters):
         text += build_response_redirect('/index.html')
     else: ## a valid session so process the recording of the entry.
 
-        cursor.execute('''SELECT MAX(recordid) FROM traffic WHERE undo = 0 AND token = ? AND locations = ? AND types = ? and occupancy = ?''', (imagic, parameters['locationinput'][0], parameters['typeinput'][0], parameters['occupancyinput'][0]))
+        cursor.execute('''SELECT MAX(recordid) FROM traffic WHERE undo = 0\
+        AND token = ? AND locations = ? AND types = ? and occupancy = ?''',\
+        (imagic, parameters['locationinput'][0], parameters['typeinput'][0],\
+        parameters['occupancyinput'][0]))
         record_count = cursor.fetchall()
-        
         if record_count[0][0] == None:
-
             text += build_response_refill('message', 'Record does not exist.')
-
         else:
-        
-            cursor.execute('''UPDATE traffic SET undo = 1 WHERE recordid = (SELECT MAX(recordid) FROM traffic WHERE undo = 0 AND token = ? AND locations = ? AND types = ? and occupancy = ?)''', (imagic, parameters['locationinput'][0], parameters['typeinput'][0], parameters['occupancyinput'][0]))
+            cursor.execute('''UPDATE traffic SET undo = 1 WHERE recordid = (SELECT MAX(recordid)\
+            FROM traffic WHERE undo = 0 AND token = ? AND locations = ? AND types = ?\
+            AND occupancy = ?)''', (imagic, parameters['locationinput'][0],\
+            parameters['typeinput'][0], parameters['occupancyinput'][0]))
+
             db.commit()
-
-            text += build_response_refill('message', 'Entry Un-done.')
-
-            cursor.execute('''SELECT COUNT (*) FROM traffic WHERE undo = 0 AND token = ?''', (imagic,))
+            text += build_response_refill('message', 'Entry undone.')
+            cursor.execute('''
+            SELECT COUNT (*)\
+            FROM traffic\
+            WHERE undo = 0 AND token = ?''', (imagic,))
             record_count = cursor.fetchall()
-
             text += build_response_refill('total', str(record_count[0][0]))
 
     text += "</response>\n"
@@ -242,7 +246,6 @@ def handle_undo_request(iuser, imagic, parameters):
 # This code handles the selection of the back button on the record form (page.html)
 # You will only need to modify this code if you make changes elsewhere that break its behaviour
 def handle_back_request(iuser, imagic, parameters):
-
     text = "<response>\n"
     if handle_validate(iuser, imagic) != True:
         text += build_response_redirect('/index.html')
@@ -258,7 +261,11 @@ def handle_back_request(iuser, imagic, parameters):
 ## And that the session magic is revoked.
 def handle_logout_request(iuser, imagic, parameters):
 
-    cursor.execute('''UPDATE loginsession SET end_time = ? WHERE username = ?''', (datetime.now(), iuser))
+    cursor.execute('''
+    UPDATE loginsession\
+    SET end_time = ?\
+    WHERE username = ?\
+    ''', (datetime.now(), iuser))
     db.commit()
     text = "<response>\n"
     text += build_response_redirect('/index.html')
@@ -276,31 +283,58 @@ def handle_summary_request(iuser, imagic, parameters):
         text += build_response_redirect('/index.html')
     else:
 
-        cursor.execute('''SELECT COUNT (*) FROM traffic WHERE undo = 0 AND token = ? AND types = ?''', (imagic, 'car'))
+        cursor.execute('''SELECT COUNT (*)\
+        FROM traffic\
+        WHERE undo = 0 AND token = ? AND types = ?\
+        ''', (imagic, 'car'))
         car_query = cursor.fetchall()
 
-        cursor.execute('''SELECT COUNT (*) FROM traffic WHERE undo = 0 AND token = ? AND types = ?''', (imagic, 'taxi'))
+        cursor.execute('''SELECT COUNT (*)\
+        FROM traffic\
+        WHERE undo = 0 AND token = ? AND types = ?\
+        ''', (imagic, 'taxi'))
         taxi_query = cursor.fetchall()
 
-        cursor.execute('''SELECT COUNT (*) FROM traffic WHERE undo = 0 AND token = ? AND types = ?''', (imagic, 'bus'))
+        cursor.execute('''SELECT COUNT (*)\
+        FROM traffic\
+        WHERE undo = 0 AND token = ? AND types = ?\
+        ''', (imagic, 'bus'))
         bus_query = cursor.fetchall()
 
-        cursor.execute('''SELECT COUNT (*) FROM traffic WHERE undo = 0 AND token = ? AND types = ?''', (imagic, 'motorbike'))
+        cursor.execute('''SELECT COUNT (*)\
+        FROM traffic\
+        WHERE undo = 0 AND token = ? AND types = ?\
+        ''', (imagic, 'motorbike'))
         motorbike_query = cursor.fetchall()
 
-        cursor.execute('''SELECT COUNT (*) FROM traffic WHERE undo = 0 AND token = ? AND types = ?''', (imagic, 'bicycle'))
+        cursor.execute('''SELECT COUNT (*)\
+        FROM traffic\
+        WHERE undo = 0 AND token = ? AND types = ?\
+        ''', (imagic, 'bicycle'))
         bicycle_query = cursor.fetchall()
 
-        cursor.execute('''SELECT COUNT (*) FROM traffic WHERE undo = 0 AND token = ? AND types = ?''', (imagic, 'van'))
+        cursor.execute('''SELECT COUNT (*)\
+        FROM traffic\
+        WHERE undo = 0 AND token = ? AND types = ?\
+        ''', (imagic, 'van'))
         van_query = cursor.fetchall()
 
-        cursor.execute('''SELECT COUNT (*) FROM traffic WHERE undo = 0 AND token = ? AND types = ?''', (imagic, 'truck'))
+        cursor.execute('''SELECT COUNT (*)\
+        FROM traffic\
+        WHERE undo = 0 AND token = ? AND types = ?\
+        ''', (imagic, 'truck'))
         truck_query = cursor.fetchall()
 
-        cursor.execute('''SELECT COUNT (*) FROM traffic WHERE undo = 0 AND token = ? AND types = ?''', (imagic, 'other'))
+        cursor.execute('''SELECT COUNT (*)\
+        FROM traffic\
+        WHERE undo = 0 AND token = ? AND types = ?\
+        ''', (imagic, 'other'))
         other_query = cursor.fetchall()
 
-        cursor.execute('''SELECT COUNT (*) FROM traffic WHERE undo = 0 AND token = ?''', (imagic,))
+        cursor.execute('''SELECT COUNT (*)\
+        FROM traffic\
+        WHERE undo = 0 AND token = ?\
+        ''', (imagic,))
         total_stat = cursor.fetchall()
 
         text += build_response_refill('sum_car', str(car_query[0][0]))
@@ -413,34 +447,41 @@ class myHTTPServer_RequestHandler(BaseHTTPRequestHandler):
                 # check if one of the parameters was 'command'
                 # If it is, identify which command and call the appropriate handler function.
                 if parameters['command'][0] == 'login':
-                    [user, magic, text] = handle_login_request(user_magic[0], user_magic[1], parameters)
+                    [user, magic, text] = handle_login_request \
+                    (user_magic[0], user_magic[1], parameters)
                     #The result to a login attempt will be to set
                     #the cookies to identify the session.
                     set_cookies(self, user, magic)
                 elif parameters['command'][0] == 'add':
-                    [user, magic, text] = handle_add_request(user_magic[0], user_magic[1], parameters)
+                    [user, magic, text] = handle_add_request \
+                    (user_magic[0], user_magic[1], parameters)
                     if user == '!': # Check if we've been tasked with discarding the cookies.
                         set_cookies(self, '', '')
                 elif parameters['command'][0] == 'undo':
-                    [user, magic, text] = handle_undo_request(user_magic[0], user_magic[1], parameters)
+                    [user, magic, text] = handle_undo_request \
+                    (user_magic[0], user_magic[1], parameters)
                     if user == '!': # Check if we've been tasked with discarding the cookies.
                         set_cookies(self, '', '')
                 elif parameters['command'][0] == 'back':
-                    [user, magic, text] = handle_back_request(user_magic[0], user_magic[1], parameters)
+                    [user, magic, text] = handle_back_request \
+                    (user_magic[0], user_magic[1], parameters)
                     if user == '!': # Check if we've been tasked with discarding the cookies.
                         set_cookies(self, '', '')
                 elif parameters['command'][0] == 'summary':
-                    [user, magic, text] = handle_summary_request(user_magic[0], user_magic[1], parameters)
+                    [user, magic, text] = handle_summary_request \
+                    (user_magic[0], user_magic[1], parameters)
                     if user == '!': # Check if we've been tasked with discarding the cookies.
                         set_cookies(self, '', '')
                 elif parameters['command'][0] == 'logout':
-                    [user, magic, text] = handle_logout_request(user_magic[0], user_magic[1], parameters)
+                    [user, magic, text] = handle_logout_request \
+                    (user_magic[0], user_magic[1], parameters)
                     if user == '!': # Check if we've been tasked with discarding the cookies.
                         set_cookies(self, '', '')
                 else:
                     # The command was not recognised, report that to the user.
                     text = "<response>\n"
-                    text += build_response_refill('message', 'Internal Error: Command not recognised.')
+                    text += build_response_refill('message', \
+                    'Internal Error: Command not recognised.')
                     text += "</response>\n"
 
             else:
