@@ -260,12 +260,11 @@ def handle_back_request(iuser, imagic, parameters):
 ## You will need to ensure the end of the session is recorded in the database
 ## And that the session magic is revoked.
 def handle_logout_request(iuser, imagic, parameters):
-
     cursor.execute('''
     UPDATE loginsession\
     SET end_time = ?\
-    WHERE username = ?\
-    ''', (datetime.now(), iuser))
+    WHERE username = ? AND token = ?\
+    ''', (datetime.now(), iuser, imagic))
     db.commit()
     text = "<response>\n"
     text += build_response_redirect('/index.html')
@@ -388,8 +387,6 @@ class myHTTPServer_RequestHandler(BaseHTTPRequestHandler):
         # Fetch the cookies that arrived with the GET request
         # The identify the user session.
         user_magic = get_cookies(self)
-
-        print(user_magic)
 
         # Parse the GET request to identify the file requested and the GET parameters
         parsed_path = urllib.parse.urlparse(self.path)
