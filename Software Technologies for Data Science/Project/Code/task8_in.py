@@ -19,9 +19,11 @@ with open('task8_in.csv', 'r', newline = '') as file:
         vehicle_type = row[3]
         occupancy = row[4]
 
+        record_time = datetime.datetime.strptime(time_added,'%Y%m%d%H%M')
+
         if add_undo == 'add':
             cursor.execute('''INSERT INTO traffic (username, locations, types, occupancy, time_added)\
-                 VALUES (?, ?, ?, ?, ?)''', ('task8_user', location, vehicle_type, occupancy, time_added))
+                 VALUES (?, ?, ?, ?, ?)''', ('task8_user', location, vehicle_type, occupancy, record_time))
         else:
             cursor.execute('''UPDATE traffic SET undo = 1 WHERE recordid = (SELECT MAX(recordid)\
                         FROM traffic WHERE undo = 0 AND locations = ? AND types = ? AND occupancy = ?)''', (location, vehicle_type, occupancy))

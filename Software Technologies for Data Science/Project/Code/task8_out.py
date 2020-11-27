@@ -18,7 +18,11 @@ while INPUT == False:
     try:
         start_date = datetime.datetime.strptime(input('Type a start date YEAR-MONTH-DAY-HOUR-MINUTE in the format YYYYMMDDHHMM: '), '%Y%m%d%H%M')
         end_date = datetime.datetime.strptime(input('Type a end date YEAR-MONTH-DAY-HOUR-MINUTE in the format YYYYMMDDHHMM: '), '%Y%m%d%H%M')
-        INPUT = True
+
+        if end_date < start_date:
+            print('End date must be after the start date.')
+        else:
+            INPUT = True
     
     except:
         print('Incorrect time format given, please provide a valid date format.')
