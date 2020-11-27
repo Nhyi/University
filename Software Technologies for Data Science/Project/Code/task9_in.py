@@ -6,7 +6,7 @@ import sqlite3
 db = sqlite3.connect('database.db')
 cursor = db.cursor()
 
-with open('task8_out.csv', 'w', newline = '') as file:
+with open('task9_in.csv', 'r', newline = '') as file:
 
     file = csv.reader(file)
     
@@ -15,9 +15,12 @@ with open('task8_out.csv', 'w', newline = '') as file:
         csv_datetime = row[1]
         login_logout = row[2]
 
-        if login_logout == 'logout':
-            cursor.execute('''UPDATE loginsession SET end = ? WHERE user = ?)''', (csv_datetime, username))
-        else:
-            cursor.execute('''INSERT INTO loginsession VALUES ?, ?, 0, 0''', (username, csv_datetime))
+        record_time = datetime.datetime.strptime(csv_datetime,'%Y%m%d%H%M')
+
+        if login_logout == 'login':
+            cursor.execute('''INSERT INTO loginsession (username, start_time) VALUES (?, ?)''', (username, record_time))
+
+        elif login_logout == 'logout':
+            cursor.execute('''UPDATE loginsession SET end_time = ? WHERE username = ?''', (record_time, username))
 
         db.commit()
