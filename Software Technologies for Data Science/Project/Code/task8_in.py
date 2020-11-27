@@ -8,8 +8,8 @@ db = sqlite3.connect('database.db')
 cursor = db.cursor()
 
 #reading through the file and setting each information to a variable
-with open('task8_out.csv', 'w', newline = '') as file:
-    
+with open('task8_in.csv', 'r', newline = '') as file:
+
     file = csv.reader(file)
 
     for row in file:
@@ -20,8 +20,10 @@ with open('task8_out.csv', 'w', newline = '') as file:
         occupancy = row[4]
 
         if add_undo == 'add':
-        
+            cursor.execute('''INSERT INTO traffic (username, locations, types, occupancy, time_added)\
+                 VALUES (?, ?, ?, ?, ?)''', ('task8_user', location, vehicle_type, occupancy, time_added))
         else:
-
+            cursor.execute('''UPDATE traffic SET undo = 1 WHERE recordid = (SELECT MAX(recordid)\
+                        FROM traffic WHERE undo = 0 AND locations = ? AND types = ? AND occupancy = ?)''', (location, vehicle_type, occupancy))
         
         db.commit()
