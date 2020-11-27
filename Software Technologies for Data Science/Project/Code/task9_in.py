@@ -14,7 +14,6 @@ with open('task9_in.csv', 'r', newline = '') as file:
         username = row[0]
         csv_datetime = row[1]
         login_logout = row[2]
-
         record_time = datetime.datetime.strptime(csv_datetime,'%Y%m%d%H%M')
 
         if login_logout == 'login':

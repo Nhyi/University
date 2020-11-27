@@ -18,7 +18,6 @@ with open('task8_in.csv', 'r', newline = '') as file:
         location = row[2]
         vehicle_type = row[3]
         occupancy = row[4]
-
         record_time = datetime.datetime.strptime(time_added,'%Y%m%d%H%M')
 
         if add_undo == 'add':
