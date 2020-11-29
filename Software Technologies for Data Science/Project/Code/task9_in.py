@@ -20,6 +20,6 @@ with open('task9_in.csv', 'r', newline = '') as file:
             cursor.execute('''INSERT INTO loginsession (username, start_time) VALUES (?, ?)''', (username, record_time))
 
         elif login_logout == 'logout':
-            cursor.execute('''UPDATE loginsession SET end_time = ? WHERE username = ?''', (record_time, username))
+            cursor.execute('''UPDATE loginsession SET end_time = ? WHERE username = ? AND end_time IS NULL''', (record_time, username))
 
         db.commit()
