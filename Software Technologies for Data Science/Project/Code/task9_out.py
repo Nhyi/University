@@ -51,7 +51,6 @@ for record in month_records:
     month_list.append(ceil((record[1] * 24) * 10) / 10)
 
 complete_list = list(zip(name_list, day_list, week_list, month_list))
-print(complete_list)
 
 with open ('task9_out.csv', 'w', newline = '') as f:
     for record in complete_list:
