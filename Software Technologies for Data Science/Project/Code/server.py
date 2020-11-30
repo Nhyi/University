@@ -178,7 +178,8 @@ def handle_add_request(iuser, imagic, parameters):
         text += build_response_refill('total', '0')
 
     elif 'locationinput' not in parameters:
-        text += build_response_refill('message', 'Invalid location')
+
+        text += build_response_refill('message', 'Please enter location')
         cursor.execute('''SELECT COUNT (*) FROM traffic WHERE token = ? AND undo = 0''', (imagic, ))
         total = list(cursor.fetchall())
         text += build_response_refill('total', str(total[0][0]))
