@@ -27,10 +27,26 @@ day = day.strftime('%Y-%m-%d')
 week = week.strftime('%Y-%m-%d')
 month = month.strftime('%Y-%m-%d')
 
-cursor.execute('''SELECT * FROM loginsession WHERE end_time IS NOT NULL AND date(start_time) = ?''', (day,))
-records = cursor.fetchall()
+cursor.execute('''SELECT * FROM loginsession WHERE end_time IS NOT NULL AND date(start_time) = ? ''', (day,))
+day_records = cursor.fetchall()
 
-for record in records:
+cursor.execute('''SELECT * FROM loginsession WHERE end_time IS NOT NULL AND date(start_time) BETWEEN ? AND ?''', (week, day))
+week_records = cursor.fetchall()
+
+cursor.execute('''SELECT * FROM loginsession WHERE end_time IS NOT NULL AND date(start_time) BETWEEN ? AND ?''', (month, day))
+month_records = cursor.fetchall()
+
+for record in day_records:
+    print(record)
+
+print("")
+
+for record in week_records:
+    print(record)
+
+print("")
+
+for record in month_records:
     print(record)
 
 # with open ('task9_out.csv', 'w', newline = '') as f:
