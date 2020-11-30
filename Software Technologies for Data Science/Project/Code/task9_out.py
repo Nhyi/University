@@ -4,7 +4,6 @@ import sqlite3
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
-
 db = sqlite3.connect('database.db')
 cursor = db.cursor()
 
