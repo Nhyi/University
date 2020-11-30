@@ -22,19 +22,14 @@ import secrets #used to randomize a token
 db = sqlite3.connect('database.db')
 cursor = db.cursor()
 
-cursor.execute('''DROP TABLE IF EXISTS logins''')
-cursor.execute('''DROP TABLE IF EXISTS loginsession''')
-cursor.execute('''DROP TABLE IF EXISTS traffic''')
-db.commit()
-
 #creating the table for storing logins and password
-cursor.execute('''CREATE TABLE logins (
+cursor.execute('''CREATE TABLE IF NOT EXISTS logins (
     usernames TEXT PRIMARY KEY,
     passwords TEXT
     )''')
 
 #creating the tables for monitoring start and end sessions
-cursor.execute('''CREATE TABLE loginsession (
+cursor.execute('''CREATE TABLE IF NOT EXISTS loginsession (
     sessionid INTEGER PRIMARY KEY,
     username TEXT,
     start_time DATETIME,
@@ -43,7 +38,7 @@ cursor.execute('''CREATE TABLE loginsession (
     )''')
 
 #creating the table for storing traffic
-cursor.execute('''CREATE TABLE traffic (
+cursor.execute('''CREATE TABLE IF NOT EXISTS traffic (
     recordid INTEGER PRIMARY KEY,
     username TEXT,
     locations TEXT,
@@ -57,24 +52,11 @@ cursor.execute('''CREATE TABLE traffic (
 #committing to the database
 db.commit()
 
-#storing the usernames and passwords in the logins table
-usernames = ['test1', 'test2', 'test3', 'test4', 'test5', \
-            'test6', 'test7', 'test8', 'test9', 'test10']
-passwords = ['password1', 'password2', 'password3', 'password4', 'password5', \
-            'password6', 'password7', 'password8', 'password9', 'password10']
-
 #hashing function
 def hash_pwd(password):
     #hash the password
     hashing_password = hashlib.sha512(password.encode('utf-8'))
     return hashing_password.hexdigest()
-#hashes the usernames and passwords
-hashed_pwds = [hash_pwd(pwd) for pwd in passwords]
-user_hash = list(zip(usernames, hashed_pwds))
-
-#populates the table of logins
-cursor.executemany("""INSERT INTO logins VALUES (?, ?)""", user_hash)
-db.commit()
 
 #used to create a token
 def generate_token():
@@ -113,15 +95,13 @@ def build_response_redirect(where):
 def handle_validate(iuser, imagic):
 
     cursor.execute('''SELECT COUNT (*) FROM loginsession WHERE \
-    username = ? AND token = ?''', (iuser, imagic))
+    username = ? AND token = ? AND end_time IS NULL''', (iuser, imagic))
     fetching = cursor.fetchall()
-    length = len(list(fetching))
 
-    return bool(length > 0)
-
-## remove the combination of user and magic from the data base, ending the login
-def handle_delete_session(iuser, imagic):
-    return
+    if list(fetching)[0][0] == 1:
+        return True
+    else:
+        return False
 
 ## A user has supplied a username (parameters['usernameinput'][0])
 ## and password (parameters['passwordinput'][0]) check if these are
@@ -132,39 +112,57 @@ def handle_login_request(iuser, imagic, parameters):
 
     if handle_validate(iuser, imagic) == True:
         # the user is already logged in, so end the existing session.
-        handle_delete_session(iuser, imagic)
-
-    text = "<response>\n"
-
-    #checking for empty inputs for password or usernames
-    if 'passwordinput' not in parameters or 'usernameinput' not in parameters:
-        text += build_response_refill('message', 'Invalid username/password')
-        user = '!'
+        text = "<response>\n"
+        text += build_response_refill('message', 'User has already logged in')
+        user = parameters['usernameinput'][0]
         magic = ''
         text += "</response>\n"
         return [user, magic, text]
 
-    #checking non empty inputs against table
-    username = parameters['usernameinput'][0]
-    given_password = parameters['passwordinput'][0]
+    elif handle_validate(iuser, imagic) == False:
+        text = "<response>\n"
 
-    cursor.execute('''SELECT passwords FROM logins WHERE usernames = ?;''', (username,))
-    db_password = (cursor.fetchone()[0])
+        #checking for empty inputs for password or usernames
+        if 'passwordinput' not in parameters or 'usernameinput' not in parameters:
+            text += build_response_refill('message', 'Invalid username/password')
+            user = '!'
+            magic = ''
+            text += "</response>\n"
+            return [user, magic, text]
 
-    if verify_password(db_password, given_password):
-        token = generate_token()
-        cursor.execute('''INSERT INTO loginsession (username, start_time, token) \
-        VALUES (?, ?, ?)''', (username, datetime.now(), token))
-        db.commit()
-        text += build_response_redirect('/page.html')
-        user = username
-        magic = token
-    else: ## The user is not valid
-        text += build_response_refill('message', 'Invalid password')
-        user = '!'
-        magic = ''
-    text += "</response>\n"
-    return [user, magic, text]
+        #checking non empty inputs against table
+        username = parameters['usernameinput'][0]
+        given_password = parameters['passwordinput'][0]
+
+        cursor.execute('''SELECT passwords FROM logins WHERE usernames = ?;''', (username,))
+        db_password = (cursor.fetchone()[0])
+
+        if verify_password(db_password, given_password):
+            cursor.execute('''SELECT COUNT (*) FROM loginsession \n
+                            WHERE username = ? AND end_time IS NULL''', (username, ))
+            records = cursor.fetchall()
+
+            if list(records)[0][0] >= 1:
+                text = "<response>\n"
+                text += build_response_refill('message', 'User has already logged in')
+                user = '!'
+                magic = ''
+                text += "</response>\n"
+                return [user, magic, text]
+            
+            token = generate_token()
+            cursor.execute('''INSERT INTO loginsession (username, start_time, token) \
+            VALUES (?, ?, ?)''', (username, datetime.now(), token))
+            db.commit()
+            text += build_response_redirect('/page.html')
+            user = username
+            magic = token
+        else: ## The user is not valid
+            text += build_response_refill('message', 'Invalid password')
+            user = '!'
+            magic = ''
+        text += "</response>\n"
+        return [user, magic, text]
 
 ## The user has requested a vehicle be added to the count
 ## parameters['locationinput'][0] the location to be recorded
@@ -176,11 +174,14 @@ def handle_add_request(iuser, imagic, parameters):
     text = "<response>\n"
     if handle_validate(iuser, imagic) != True:
         #Invalid sessions redirect to login
-        text += build_response_redirect('/index.html')
+        text += build_response_refill('message', 'User not logged in')
+        text += build_response_refill('total', '0')
 
     elif 'locationinput' not in parameters:
         text += build_response_refill('message', 'Invalid location')
-
+        cursor.execute('''SELECT COUNT (*) FROM traffic WHERE token = ? AND undo = 0''', (imagic, ))
+        total = list(cursor.fetchall())
+        text += build_response_refill('total', str(total[0][0]))
     else: ## a valid session so process the addition of the entry.
 
         locations = parameters['locationinput'][0]
@@ -213,14 +214,25 @@ def handle_undo_request(iuser, imagic, parameters):
     text = "<response>\n"
     if handle_validate(iuser, imagic) != True:
         #Invalid sessions redirect to login
-        text += build_response_redirect('/index.html')
+        text += build_response_refill('message', 'User not logged in')
+        text += build_response_refill('total', '0')
     else: ## a valid session so process the recording of the entry.
+
+        if 'locationinput' not in parameters:
+            text += build_response_refill('message', 'Please enter location')
+            cursor.execute('''SELECT COUNT (*) FROM traffic WHERE token = ? AND undo = 0''', (imagic, ))
+            total = list(cursor.fetchall)
+            text += build_response_refill('total', str(total[0][0]))
+            user = iuser
+            magic = imagic
+            return [user, magic, text]
 
         cursor.execute('''SELECT MAX(recordid) FROM traffic WHERE undo = 0\
         AND token = ? AND locations = ? AND types = ? and occupancy = ?''',\
         (imagic, parameters['locationinput'][0], parameters['typeinput'][0],\
         parameters['occupancyinput'][0]))
         record_count = cursor.fetchall()
+
         if record_count[0][0] == None:
             text += build_response_refill('message', 'Record does not exist.')
         else:
