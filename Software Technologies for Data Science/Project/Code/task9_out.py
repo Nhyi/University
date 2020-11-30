@@ -27,29 +27,33 @@ day = day.strftime('%Y-%m-%d')
 week = week.strftime('%Y-%m-%d')
 month = month.strftime('%Y-%m-%d')
 
-cursor.execute('''SELECT * FROM loginsession WHERE end_time IS NOT NULL AND date(start_time) = ? ''', (day,))
+cursor.execute('''SELECT username, ROUND(SUM((julianday(end_time) - julianday(start_time)) * 24), 1) FROM loginsession WHERE end_time IS NOT NULL AND date(start_time) = ? GROUP BY username''', (day,))
 day_records = cursor.fetchall()
+name_list = []
+day_list = []
 
-cursor.execute('''SELECT * FROM loginsession WHERE end_time IS NOT NULL AND date(start_time) BETWEEN ? AND ?''', (week, day))
+cursor.execute('''SELECT username, ROUND(SUM((julianday(end_time) - julianday(start_time)) * 24), 1) FROM loginsession WHERE end_time IS NOT NULL AND date(start_time) BETWEEN ? AND ? GROUP BY username''', (week, day))
 week_records = cursor.fetchall()
+week_list = []
 
-cursor.execute('''SELECT * FROM loginsession WHERE end_time IS NOT NULL AND date(start_time) BETWEEN ? AND ?''', (month, day))
+cursor.execute('''SELECT username, ROUND(SUM((julianday(end_time) - julianday(start_time)) * 24), 1) FROM loginsession WHERE end_time IS NOT NULL AND date(start_time) BETWEEN ? AND ? GROUP BY username''', (month, day))
 month_records = cursor.fetchall()
+month_list = []
 
 for record in day_records:
-    print(record)
-
-print("")
+    name_list.append(record[0])
+    day_list.append(record[1])
 
 for record in week_records:
-    print(record)
-
-print("")
+    week_list.append(record[1])
 
 for record in month_records:
-    print(record)
+    month_list.append(record[1])
 
-# with open ('task9_out.csv', 'w', newline = '') as f:
-#     for record in writing_to_csv:
-#         write = csv.writer(f)
-#         write.writerow(record)
+complete_list = list(zip(name_list, day_list, week_list, month_list))
+print(complete_list)
+
+with open ('task9_out.csv', 'w', newline = '') as f:
+    for record in complete_list:
+        write = csv.writer(f)
+        write.writerow(record)
