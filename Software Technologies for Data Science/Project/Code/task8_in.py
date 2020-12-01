@@ -1,8 +1,12 @@
 #importing the required modules
+import os
 import csv
 import datetime
 import sqlite3
 from database_script import database_creation
+
+if os.path.exists('task8_in.db'):
+    os.remove('task8_in.db')
 
 #connecting to the database
 database_creation('task8_in.db')
