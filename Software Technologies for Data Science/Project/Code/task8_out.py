@@ -4,7 +4,7 @@ import datetime
 import sqlite3
 
 #connect to the database
-db = sqlite3.connect('database.db')
+db = sqlite3.connect('initial_database.db')
 cursor = db.cursor()
 
 #have lists which we are going to write to

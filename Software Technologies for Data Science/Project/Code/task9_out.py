@@ -5,7 +5,7 @@ from math import ceil
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
-db = sqlite3.connect('database.db')
+db = sqlite3.connect('initial_database.db')
 cursor = db.cursor()
 
 correct_entry = False

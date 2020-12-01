@@ -2,8 +2,10 @@
 import csv
 import datetime
 import sqlite3
+from database_script import database_creation
 
-db = sqlite3.connect('database.db')
+database_creation('task9_in.db')
+db = sqlite3.connect('task9_in.db')
 cursor = db.cursor()
 
 with open('task9_in.csv', 'r', newline = '') as file:

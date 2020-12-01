@@ -16,41 +16,14 @@ import sqlite3 # used to create the database
 import hashlib #used to help has the passwords and check them in the login tables
 from datetime import datetime #using datetime for records
 import secrets #used to randomize a token
+from database_script import database_creation
 
 #Task 1: Creating the SQL Database
 #creating the database and referencing to it
-db = sqlite3.connect('database.db')
+database_creation('empty_database.db')
+database_creation('initial_database.db')
+db = sqlite3.connect('initial_database.db')
 cursor = db.cursor()
-
-#creating the table for storing logins and password
-cursor.execute('''CREATE TABLE IF NOT EXISTS logins (
-    usernames TEXT PRIMARY KEY,
-    passwords TEXT
-    )''')
-
-#creating the tables for monitoring start and end sessions
-cursor.execute('''CREATE TABLE IF NOT EXISTS loginsession (
-    sessionid INTEGER PRIMARY KEY,
-    username TEXT,
-    start_time DATETIME,
-    end_time DATETIME,
-    token TEXT
-    )''')
-
-#creating the table for storing traffic
-cursor.execute('''CREATE TABLE IF NOT EXISTS traffic (
-    recordid INTEGER PRIMARY KEY,
-    username TEXT,
-    locations TEXT,
-    types TEXT,
-    occupancy INTEGER,
-    time_added DATETIME,
-    token TEXT,
-    undo INTEGER DEFAULT 0
-    )''')
-
-#committing to the database
-db.commit()
 
 #hashing function
 def hash_pwd(password):

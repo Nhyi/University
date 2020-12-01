@@ -2,9 +2,11 @@
 import csv
 import datetime
 import sqlite3
+from database_script import database_creation
 
 #connecting to the database
-db = sqlite3.connect('database.db')
+database_creation('task8_in.db')
+db = sqlite3.connect('task8_in.db')
 cursor = db.cursor()
 
 #reading through the file and setting each information to a variable
