@@ -195,8 +195,9 @@ def handle_undo_request(iuser, imagic, parameters):
         if 'locationinput' not in parameters:
             text += build_response_refill('message', 'Please enter location')
             cursor.execute('''SELECT COUNT (*) FROM traffic WHERE token = ? AND undo = 0''', (imagic, ))
-            total = list(cursor.fetchall)
+            total = list(cursor.fetchall())
             text += build_response_refill('total', str(total[0][0]))
+            text += "</response>\n"
             user = iuser
             magic = imagic
             return [user, magic, text]
