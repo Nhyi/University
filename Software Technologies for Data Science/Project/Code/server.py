@@ -131,7 +131,7 @@ def handle_login_request(iuser, imagic, parameters):
             user = username
             magic = token
         else: ## The user is not valid
-            text += build_response_refill('message', 'Invalid password')
+            text += build_response_refill('message', 'Invalid username/password')
             user = '!'
             magic = ''
         text += "</response>\n"
