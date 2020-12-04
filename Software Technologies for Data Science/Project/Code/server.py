@@ -15,7 +15,7 @@ import base64 # some encoding support
 import sqlite3 # used to create the database
 import hashlib #used to help has the passwords and check them in the login tables
 from datetime import datetime #using datetime for records
-import random #used to randomize a token
+import secrets #used to randomize a token
 from database_script import database_creation
 
 #Task 1: Creating the SQL Database
@@ -32,8 +32,7 @@ def hash_pwd(password):
 
 #used to create a token
 def generate_token():
-    token = random.randint(1000000000, 9999999999)
-    return str(token)
+    return secrets.token_hex()
 
 #checking function
 def verify_password(stored_password, provided_password):
