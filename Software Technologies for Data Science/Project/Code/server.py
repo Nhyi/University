@@ -20,7 +20,6 @@ from database_script import database_creation
 
 #Task 1: Creating the SQL Database
 #creating the database and referencing to it
-database_creation('empty_database.db')
 database_creation('initial_database.db')
 db = sqlite3.connect('initial_database.db')
 cursor = db.cursor()

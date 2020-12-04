@@ -5,11 +5,11 @@ import datetime
 import sqlite3
 from database_script import database_creation
 
-if os.path.exists('task9_in.db'):
-    os.remove('task9_in.db')
+if os.path.exists('task9.db'):
+    os.remove('task9.db')
 
-database_creation('task9_in.db')
-db = sqlite3.connect('task9_in.db')
+database_creation('task9.db')
+db = sqlite3.connect('task9.db')
 cursor = db.cursor()
 
 with open('task9_in.csv', 'r', newline = '') as file:

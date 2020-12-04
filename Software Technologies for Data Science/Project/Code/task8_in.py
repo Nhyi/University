@@ -5,12 +5,12 @@ import datetime
 import sqlite3
 from database_script import database_creation
 
-if os.path.exists('task8_in.db'):
-    os.remove('task8_in.db')
+if os.path.exists('task8.db'):
+    os.remove('task8.db')
 
 #connecting to the database
-database_creation('task8_in.db')
-db = sqlite3.connect('task8_in.db')
+database_creation('task8.db')
+db = sqlite3.connect('task8.db')
 cursor = db.cursor()
 
 #reading through the file and setting each information to a variable
