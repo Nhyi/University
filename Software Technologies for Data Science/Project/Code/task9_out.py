@@ -13,7 +13,7 @@ correct_entry = False
 while correct_entry == False:
 
     try:
-        time = datetime.strptime(input('Type a start date YEAR-MONTH-DAY in the format YYYYMMDD: '), '%Y%m%d')
+        time = datetime.strptime(input('Type a date YEAR-MONTH-DAY in the format YYYYMMDD: '), '%Y%m%d')
         correct_entry = True
     
     except:
