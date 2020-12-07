@@ -1,5 +1,6 @@
-main street,car,1,2,1,0
+main street,car,1,0,0,0
 main street,taxi,0,0,0,1
+ring road,car,0,2,1,0
 busy road,bus,0,1,2,3
 university avenue,bicycle,0,1,0,0
 busy road,motorbike,2,0,0,0

@@ -14,7 +14,7 @@ db = sqlite3.connect('task8.db')
 cursor = db.cursor()
 
 #reading through the file and setting each information to a variable
-with open('task8_in.csv', 'r', newline = '') as file:
+with open('task8_traffic_input.csv', 'r', newline = '') as file:
 
     file = csv.reader(file)
 
@@ -34,3 +34,4 @@ with open('task8_in.csv', 'r', newline = '') as file:
                         FROM traffic WHERE undo = 0 AND locations = ? AND types = ? AND occupancy = ?)''', (location, vehicle_type, occupancy))
         
         db.commit()
+        
